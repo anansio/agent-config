@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Local environment
+.env
+.DS_Store
+
+# Work log written by the MCP tools at its default location
+.agents/
