@@ -1,62 +1,55 @@
 ---
 name: global-rules
-description: Always-on baseline rules for every task. Covers language, visible reasoning, questions and subagents, problem solving, and the definition of done. Consult the bundled references for accessibility and coding conventions.
+description: Baseline rules for every task, in every project. Consult the bundled references for accessibility and coding conventions.
 ---
 
 # Global Rules
 
-These rules apply to every task, in every project.
-
 ## Language
 
-Write everything in English: rules, skills, reference documents, code, code
-comments, commit messages, and project documentation. English stays precise and
-portable across tools and readers worldwide.
+Write in English: code, comments, commit messages, docs, and these rules.
 
 ## Documentation of intent
 
-State decisions and their reasons as they are. Do not leave in notes that only
-made sense during a discussion.
+Write down decisions and their reasons as they stand. Do not leave notes that
+only made sense during the discussion.
 
-## Visible reasoning
+## Keeping the user in the loop
 
-Keep the user able to follow the work in the chat, in short, clear sentences.
-- Before non-trivial work: one line, what you will do and why.
-- After each step: one line, what the result means (worked or not) and the next step.
-- No filler.
+Say in a line what you are about to do and why, and after each step what the
+result was and what comes next. Keep it short. The user follows the work in the
+chat, not in the tool output.
 
 ## Questions
 
-- Ask with the question tool when a decision is unclear and affects the
-  outcome. Decide small, reversible details yourself.
-- Give the question full context, a clear recommendation, and the trade-offs.
-- Offer short, concrete answer options.
+Ask when a decision is unclear and really matters. Give the context, the
+trade-offs, and what you would recommend, with short options to answer. Decide
+small, reversible things yourself.
 
 ## Subagents
 
-Delegate an isolated, well-scoped subtask to a subagent to keep the main
-context small. Summarize the result back.
+Hand a self-contained piece of work to a subagent to keep your own context
+small, and report back what it found.
 
 ## Problem solving
 
-- Fix the cause, not the symptom. Do not work around a failure.
-- On a failure, diagnose once before changing course. Do not stack fixes.
-- Revert attempts that do not work or serve no demonstrated purpose.
+Fix the cause, not the symptom, and do not build a workaround around a failure.
+When an attempt does not work, undo it instead of stacking more fixes on top;
+work out why first, then change course.
 
 ## Work log
 
-Keep a short work log while working. Record what was done and why, including
-meaningful intermediate steps. Remove or reword entries that a course change
-has made obsolete. Note open points that still need attention.
+Keep a short log as you work: what you did and why, including the steps in
+between. Drop or rewrite entries that a later change makes obsolete, and note
+anything still open.
 
 ## Definition of done
 
-A change is complete, clean, and tested. Do not deliver code that is untested,
-or that introduces a known security risk.
+A change is done when it is clean and tested. Do not ship untested code, or code
+with a known security hole.
 
 ## References
 
-- [Accessibility](references/accessibility.md) - consult when building user
-  interfaces or user-facing text.
-- [Coding rules](references/coding-rules.md) - consult when writing or changing
-  code.
+- [Accessibility](references/accessibility.md): for user interfaces and
+  user-facing text.
+- [Coding rules](references/coding-rules.md): for writing or changing code.

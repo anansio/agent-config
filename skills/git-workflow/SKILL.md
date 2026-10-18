@@ -1,17 +1,16 @@
 ---
 name: git-workflow
-description: This skill should be used when making commits, branching, or preparing changes for review, to keep history clean and focused.
+description: Use when committing, branching, or preparing changes for review, to keep history clean and focused.
 ---
 
 # Git Workflow
 
-- Follow [Conventional Commits](https://www.conventionalcommits.org) for commit
-  messages: `feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`, and so on.
-  Versioning is derived from these types, so use them correctly.
-- Use a concise subject in the imperative mood, then explain the reason in the
-  body when it is not obvious.
-- Make small, focused commits. One logical change per commit.
-- Commit code together with its tests and documentation when they belong to the
-  same change.
+- Write commit messages in [Conventional Commits](https://www.conventionalcommits.org)
+  style: `feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`. Versioning
+  comes from these types, so get them right.
+- Use a short imperative subject, and explain why in the body when it is not
+  obvious.
+- Keep commits small: one logical change each.
+- Keep code, tests, and docs for one change in the same commit.
 - Do not commit generated files, secrets, or local environment files.
-- Never push directly to the main branch. Use a branch and a pull request.
+- Never push to main directly. Use a branch and a pull request.

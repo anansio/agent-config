@@ -2,29 +2,25 @@
 
 ## Avoid overengineering
 
-- Solve the problem in front of you, not imagined future needs.
-- Prefer the smallest solution that fully meets the requirement. A simple,
-  pragmatic solution beats an exhaustive one.
-- Add an abstraction only when there is a second real use for it.
-- Keep changes focused. Do not refactor code that is unrelated to the task.
+Solve the problem in front of you, not imaginary future ones. Prefer the
+smallest solution that fully works; simple and a little pragmatic beats complete
+and complex. Add an abstraction only when there is a second real use for it.
+Keep the change focused, and leave unrelated code alone.
 
 ## Production-ready
 
-- Ship finished code. Leave no dummy code, placeholders, or stray TODO markers.
-- If a gap is intentional, state it as a clear, tracked item, not as a comment
-  left behind in the code.
+Ship finished code. No dummy code, no placeholders, no leftover TODOs. If you
+deliberately leave a gap, say so openly instead of hiding it in a comment.
 
 ## Compatibility
 
-- Do not keep a fallback or a compatibility path for every change. Keep the
-  code clean and minimal under one maintainable design; the process as a whole
-  need not stay backward compatible.
-- Warn when a change breaks compatibility for a version already in use, and
-  offer the choice with short options: keep compatibility, or drop it.
+Not every change needs a fallback or a compatibility path; keep the code clean
+under one design. The project as a whole does not have to stay backward
+compatible. But when a change breaks a version that is already in use, say so
+and offer the choice: keep compatibility, or drop it.
 
 ## Safe and tested
 
-- Write code that is secure by default. Validate input at the boundaries.
-- Cover new behaviour with tests. A change without tests is not done.
-- Comment every test. Say what the test verifies and why it matters, so the
-  intent survives without reading the implementation.
+Write secure code and check input where it enters. Cover new behavior with
+tests; a change without tests is not done. Comment each test with what it
+checks and why, so the intent survives.

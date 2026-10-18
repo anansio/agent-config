@@ -1,5 +1,5 @@
-"""The individual log tools."""
+"""Tool groups. Each module here bundles the tool functions of one group."""
 
-from . import log_append, log_delete, log_search, log_update
+from . import log
 
-__all__ = ["log_append", "log_delete", "log_search", "log_update"]
+__all__ = ["log"]

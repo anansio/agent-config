@@ -1,6 +1,6 @@
 ---
 name: docs-rules
-description: Documentation conventions for explicit document files such as Markdown, reStructuredText, and AsciiDoc. Applied automatically when writing or editing documentation.
+description: Conventions for document files such as Markdown, reStructuredText, and AsciiDoc. Loaded automatically when writing or editing documentation.
 paths:
   - "**/*.md"
   - "**/*.mdx"
@@ -10,16 +10,12 @@ paths:
 
 # Documentation Rules
 
-These rules apply when you read, write, or edit a document file.
+Write for a reader who does not have your context and did not follow the
+discussion that produced the document.
 
-- Write for a reader who lacks your current context. Do not assume they followed
-  the discussion that produced the document.
-- Describe the artifact as it is, not as it relates to you or to this
-  discussion. Avoid words that only hold now or for you: "private", "my/our",
-  "currently", "new/old". A later reader should understand the text with no
-  background.
-- Do not keep context-dependent negatives, such as "we no longer use X" or "not
-  the old approach". Say what is true now. A future reader has no idea what the
-  old approach was.
-- Aim for a clear, well-structured document. Use headings, short paragraphs,
-  and lists where they aid scanning.
+- Describe the thing as it is now. Avoid words that only fit this moment or this
+  conversation, like "new", "old", "currently", "our".
+- Do not write context-dependent negatives such as "we no longer use X". Say
+  what is true; a later reader will not know what the old thing was.
+- Aim for something easy to scan: headings, short paragraphs, lists where they
+  help.

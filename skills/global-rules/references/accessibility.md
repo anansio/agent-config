@@ -1,15 +1,12 @@
 # Accessibility
 
-Apply these rules to user interfaces and to text a person reads.
-
 ## Inclusive language
 
-- Use gender-equitable, inclusive wording.
-- Keep it natural. Prefer phrasing that simply includes everyone over clumsy
-  constructions.
+Write gender-equitable, inclusive wording wherever people read it: user
+interfaces, user-facing text, documentation, commit messages, code comments, and
+names in code. Keep it natural; plain phrasing beats clumsy constructions.
 
 ## Keyboard operation
 
-- Make every interactive feature usable with the keyboard alone.
-- Keep a visible focus indicator.
-- Do not rely on hover or on a mouse for any essential action.
+Make every interactive feature usable with the keyboard alone, with a visible
+focus indicator. Never make a mouse or hover the only way to do something.

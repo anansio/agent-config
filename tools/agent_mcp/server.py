@@ -6,20 +6,15 @@ import json
 import sys
 from typing import Any, Callable
 
-from .tools import log_append, log_delete, log_search, log_update
+from .tools import log
 
 PROTOCOL_VERSION = "2024-11-05"
 SERVER_NAME = "agent-tools"
 SERVER_VERSION = "0.2.0"
 
-# Each entry maps a tool name to its spec and its handler. The tool modules own
-# the descriptions and schemas; this table only wires them into the protocol.
-TOOLS: dict[str, dict[str, Any]] = {
-    "log_append": log_append.SPEC,
-    "log_update": log_update.SPEC,
-    "log_delete": log_delete.SPEC,
-    "log_search": log_search.SPEC,
-}
+# Each tool group contributes its specs; the server only wires them into the
+# protocol, so adding a group means importing it here.
+TOOLS: dict[str, dict[str, Any]] = dict(log.SPECS)
 
 
 def handle_initialize(params: dict[str, Any]) -> dict[str, Any]:

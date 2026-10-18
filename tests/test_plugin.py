@@ -9,6 +9,7 @@ a file which does not exist.
 from __future__ import annotations
 
 import json
+import subprocess
 import unittest
 from pathlib import Path
 
@@ -40,16 +41,29 @@ class ManifestTests(unittest.TestCase):
         for field in ("name", "version", "description", "license"):
             self.assertTrue(manifest.get(field), f"plugin.json lacks {field}")
 
-    def test_mcp_declares_existing_server(self) -> None:
-        # Verifies the declared MCP command resolves to a real file, so the
-        # server starts instead of failing at load time.
+    def test_mcp_server_starts_from_declaration(self) -> None:
+        # Verifies the declared MCP command actually runs and answers the
+        # handshake. This covers the real wiring path end to end, so the
+        # documented manual check is not needed.
         config = json.loads((ROOT / "mcp.json").read_text(encoding="utf-8"))
         server = config["mcpServers"]["agent-tools"]
         self.assertEqual(server["type"], "stdio")
-        script = [arg for arg in server["args"] if arg.endswith(".py")]
-        self.assertTrue(script, "mcp.json does not point at a script")
-        path = script[0].replace("${PLUGIN_ROOT}", str(ROOT))
-        self.assertTrue(Path(path).is_file(), f"missing server script: {path}")
+        args = [
+            arg.replace("${PLUGIN_ROOT}", str(ROOT)) for arg in server["args"]
+        ]
+        request = json.dumps(
+            {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}}
+        )
+        completed = subprocess.run(
+            [server["command"], *args],
+            input=request + "\n",
+            capture_output=True,
+            text=True,
+            timeout=10,
+            cwd=server.get("cwd", str(ROOT)).replace("${PLUGIN_ROOT}", str(ROOT)),
+        )
+        response = json.loads(completed.stdout.splitlines()[0])
+        self.assertEqual(response["result"]["serverInfo"]["name"], "agent-tools")
 
 
 class SkillTests(unittest.TestCase):

@@ -26,11 +26,8 @@ agent-config/
 │   └── agent_mcp/              # server package
 │       ├── server.py           # JSON-RPC loop and tool registry
 │       ├── log_store.py        # JSON Lines storage and entry ids
-│       └── tools/              # one module per tool
-│           ├── log_append.py
-│           ├── log_update.py
-│           ├── log_delete.py
-│           └── log_search.py
+│       └── tools/              # one module per tool group
+│           └── log.py
 ├── tests/                      # server and plugin validation tests
 ├── .github/workflows/ci.yml    # runs the tests on push and pull request
 ├── README.md
@@ -41,29 +38,20 @@ agent-config/
 
 The server lives in the `tools/agent_mcp/` package: `server.py` holds the
 JSON-RPC loop and the tool registry, `log_store.py` owns storage, and each tool
-is its own module under `tools/agent_mcp/tools/`. `tools/mcp_server.py` is a
-thin stdio entry point. It uses only the Python standard library, so it starts
-anywhere `python3` exists. Entries are stored as JSON Lines in `.agent/log.jsonl`
-(one entry per line) with an id and a UTC timestamp, so appending stays O(1) and
-searching streams the file instead of loading it. Override the location with the
-`AGENT_LOG_PATH` environment variable.
+group is its own module under `tools/agent_mcp/tools/`. `tools/mcp_server.py`
+is a thin stdio entry point. It uses only the Python standard library, so it
+starts anywhere `python3` exists. Entries are stored as JSON Lines in
+`.agent/log.jsonl` (one entry per line) with an id and a UTC timestamp, so
+appending stays O(1) and searching streams the file instead of loading it.
+Override the location with the `AGENT_LOG_PATH` environment variable.
 
 - `log_append` - add a short entry: what was done and why.
 - `log_update` - rewrite an entry by id after a course change.
 - `log_delete` - remove an entry that turned out to be a dead end.
 - `log_search` - find entries by substring; returns them with their ids.
 
-Run it by hand to check it:
-
-```bash
-printf '%s\n' \
-  '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' \
-  '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' \
-  '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"log_append","arguments":{"text":"verified the server"}}}' \
-  | python3 tools/mcp_server.py
-```
-
-Add more tools by extending the `TOOLS` mapping in that file.
+Add more tools by extending the specs in the relevant group module under
+`tools/agent_mcp/tools/`, then importing that group in `server.py`.
 
 ## Tests
 
@@ -73,9 +61,11 @@ The suite uses only the standard library:
 python -m unittest discover -s tests -v
 ```
 
-- `tests/test_mcp_server.py` covers the log tools and the stdio protocol loop.
+- `tests/test_mcp_server.py` covers the log tools, including a full stdio
+  round trip with a real tool call.
 - `tests/test_plugin.py` validates the plugin itself: the manifest, the MCP
-  wiring, and each skill's frontmatter and relative links.
+  wiring (it starts the declared server), and each skill's frontmatter and
+  relative links.
 
 CI runs both on every push to `main` and every pull request, across Python
 3.10 to 3.13.
