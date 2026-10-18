@@ -14,6 +14,10 @@ These rules apply when you read, write, or edit a document file.
 
 - Write for a reader who lacks your current context. Do not assume they followed
   the discussion that produced the document.
+- Describe the artifact as it is, not as it relates to you or to this
+  discussion. Avoid words that only hold now or for you: "private", "my/our",
+  "currently", "new/old". A later reader should understand the text with no
+  background.
 - Do not keep context-dependent negatives, such as "we no longer use X" or "not
   the old approach". Say what is true now. A future reader has no idea what the
   old approach was.

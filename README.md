@@ -1,11 +1,11 @@
 # agent-config
 
-Personal global agent rules and a small MCP tool server, packaged as a portable
+Global agent rules and a small MCP tool server, packaged as a portable
 [Agent Plugin](https://agent-plugins.org). It loads into OpenHands and any other
 client that supports the Agent Plugins 1.0 format.
 
-The point: your global rules and helper tools live in one private repository,
-versioned with Git, and every project stays clean.
+The plugin keeps global rules and helper tools in one versioned place, so
+individual projects stay clean.
 
 ## What is in here
 
@@ -20,9 +20,7 @@ agent-config/
 │   │       ├── accessibility.md
 │   │       └── coding-rules.md
 │   ├── docs-rules/             # path-triggered rule for document files
-│   ├── git-workflow/           # on-demand skill
-│   └── testing/                # on-demand skill
-│       └── references/java-test.md
+│   └── git-workflow/           # on-demand skill
 ├── tools/
 │   └── mcp_server.py           # stdlib-only MCP server, "hello" tool
 ├── README.md

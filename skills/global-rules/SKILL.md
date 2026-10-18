@@ -9,11 +9,9 @@ These rules apply to every task, in every project.
 
 ## Language
 
-- Write rules, skills, and reference documents in English. English is more
-  precise and stays portable across tools.
-- Answer the user in German. Match the language the user writes in for chat.
-- Write code, code comments, commit messages, and project documentation in
-  English.
+Write everything in English: rules, skills, reference documents, code, code
+comments, commit messages, and project documentation. English stays precise and
+portable across tools and readers worldwide.
 
 ## Documentation of intent
 

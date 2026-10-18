@@ -2,7 +2,7 @@
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "agent-config",
   "version": "0.1.0",
-  "description": "Personal global agent rules and a small MCP tool server, shared across projects.",
+  "description": "Global agent rules and a small MCP tool server, shared across projects.",
   "author": {
     "name": "anansio"
   },

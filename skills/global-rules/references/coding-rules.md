@@ -11,3 +11,5 @@
 
 - Write code that is secure by default. Validate input at the boundaries.
 - Cover new behaviour with tests. A change without tests is not done.
+- Comment every test. Say what the test verifies and why it matters, so the
+  intent survives without reading the implementation.

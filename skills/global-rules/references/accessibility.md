@@ -4,7 +4,7 @@ Apply these rules to user interfaces and to text a person reads.
 
 ## Inclusive language
 
-- Use gender-equitable, inclusive wording when the context calls for it.
+- Use gender-equitable, inclusive wording.
 - Keep it natural. Prefer phrasing that simply includes everyone over clumsy
   constructions.
 
