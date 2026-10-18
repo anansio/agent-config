@@ -22,7 +22,15 @@ agent-config/
 │   ├── docs-rules/             # path-triggered rule for document files
 │   └── git-workflow/           # on-demand skill
 ├── tools/
-│   └── mcp_server.py           # stdlib-only MCP server, work-log tools
+│   ├── mcp_server.py           # stdio entry point (thin launcher)
+│   └── agent_mcp/              # server package
+│       ├── server.py           # JSON-RPC loop and tool registry
+│       ├── log_store.py        # JSON Lines storage and entry ids
+│       └── tools/              # one module per tool
+│           ├── log_append.py
+│           ├── log_update.py
+│           ├── log_delete.py
+│           └── log_search.py
 ├── tests/                      # server and plugin validation tests
 ├── .github/workflows/ci.yml    # runs the tests on push and pull request
 ├── README.md
@@ -31,11 +39,14 @@ agent-config/
 
 ## The MCP server
 
-`tools/mcp_server.py` speaks MCP over stdio and uses only the Python standard
-library, so it starts anywhere `python3` exists. It ships a small work-log tool
-set. Entries are stored as JSON Lines in `.agent/log.jsonl` (one entry per
-line), so appending stays O(1) and searching streams the file instead of loading
-it. Override the location with the `AGENT_LOG_PATH` environment variable.
+The server lives in the `tools/agent_mcp/` package: `server.py` holds the
+JSON-RPC loop and the tool registry, `log_store.py` owns storage, and each tool
+is its own module under `tools/agent_mcp/tools/`. `tools/mcp_server.py` is a
+thin stdio entry point. It uses only the Python standard library, so it starts
+anywhere `python3` exists. Entries are stored as JSON Lines in `.agent/log.jsonl`
+(one entry per line) with an id and a UTC timestamp, so appending stays O(1) and
+searching streams the file instead of loading it. Override the location with the
+`AGENT_LOG_PATH` environment variable.
 
 - `log_append` - add a short entry: what was done and why.
 - `log_update` - rewrite an entry by id after a course change.
