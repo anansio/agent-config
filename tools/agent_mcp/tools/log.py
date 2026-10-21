@@ -21,16 +21,27 @@ PATH_DESCRIPTION = (
     "directory."
 )
 
+KIND_DESCRIPTION = (
+    "Optional category, for filtering: 'feature', 'fix', or 'decision'."
+)
 
-def append(text: str, path: str | None = None) -> str:
+
+def append(text: str, path: str | None = None, kind: str | None = None) -> str:
     """Append one work-log entry and return its id."""
     log_path = resolve_log_path(path)
     entry = {"id": new_id(), "ts": now_ts(), "text": text}
+    if kind:
+        entry["kind"] = kind
     append_entry(log_path, entry)
     return entry["id"]
 
 
-def update(entry_id: str, text: str, path: str | None = None) -> str:
+def update(
+    entry_id: str,
+    text: str,
+    path: str | None = None,
+    kind: str | None = None,
+) -> str:
     """Replace the text of an existing entry, for a changed plan or wording."""
     log_path = resolve_log_path(path)
     entries = read_entries(log_path)
@@ -38,6 +49,8 @@ def update(entry_id: str, text: str, path: str | None = None) -> str:
         if entry["id"] == entry_id:
             entry["text"] = text
             entry["ts"] = now_ts()
+            if kind:
+                entry["kind"] = kind
             write_entries(log_path, entries)
             return entry_id
     raise ValueError(f"No log entry with id {entry_id}")
@@ -54,15 +67,27 @@ def delete(entry_id: str, path: str | None = None) -> str:
     return entry_id
 
 
-def search(query: str = "", path: str | None = None) -> str:
-    """Return matching entries as compact JSON. An empty query returns all."""
+def search(
+    query: str = "",
+    path: str | None = None,
+    kind: str | None = None,
+) -> str:
+    """Return matching entries as compact JSON. An empty query returns all.
+
+    A kind narrows the result to entries of that category.
+    """
     log_path = resolve_log_path(path)
     needle = query.lower()
-    matches = [
-        {"id": entry["id"], "ts": entry["ts"], "text": entry["text"]}
-        for entry in read_entries(log_path)
-        if needle in entry["text"].lower()
-    ]
+    matches = []
+    for entry in read_entries(log_path):
+        if needle and needle not in entry["text"].lower():
+            continue
+        if kind and entry.get("kind") != kind:
+            continue
+        result = {"id": entry["id"], "ts": entry["ts"], "text": entry["text"]}
+        if entry.get("kind"):
+            result["kind"] = entry["kind"]
+        matches.append(result)
     return json.dumps(matches, ensure_ascii=False)
 
 
@@ -70,10 +95,10 @@ def search(query: str = "", path: str | None = None) -> str:
 SPECS: dict[str, dict[str, Any]] = {
     "log_append": {
         "description": (
-            "Append a short work-log entry: what was done and why. Record "
-            "meaningful intermediate steps during the work, not only the end "
-            "result. Writes to '.agents/log.jsonl' in the project directory "
-            "unless a different path is given."
+            "Append a short work-log entry: a feature, a fix, or a decision. "
+            "Record meaningful milestones, not every step. Writes to "
+            "'.agents/log.jsonl' in the project directory unless a different "
+            "path is given."
         ),
         "input_schema": {
             "type": "object",
@@ -82,6 +107,7 @@ SPECS: dict[str, dict[str, Any]] = {
                     "type": "string",
                     "description": "Short entry: what was done and why.",
                 },
+                "kind": {"type": "string", "description": KIND_DESCRIPTION},
                 "path": {"type": "string", "description": PATH_DESCRIPTION},
             },
             "required": ["text"],
@@ -99,6 +125,7 @@ SPECS: dict[str, dict[str, Any]] = {
             "properties": {
                 "entry_id": {"type": "string", "description": "Entry id to rewrite."},
                 "text": {"type": "string", "description": "New entry text."},
+                "kind": {"type": "string", "description": KIND_DESCRIPTION},
                 "path": {"type": "string", "description": PATH_DESCRIPTION},
             },
             "required": ["entry_id", "text"],
@@ -123,7 +150,8 @@ SPECS: dict[str, dict[str, Any]] = {
     "log_search": {
         "description": (
             "Search entries by substring and return them with their ids, to "
-            "review the log or find an entry to update or delete."
+            "review the log or find an entry to update or delete. A kind "
+            "narrows the result to one category."
         ),
         "input_schema": {
             "type": "object",
@@ -132,6 +160,7 @@ SPECS: dict[str, dict[str, Any]] = {
                     "type": "string",
                     "description": "Substring to match. Empty returns all entries.",
                 },
+                "kind": {"type": "string", "description": KIND_DESCRIPTION},
                 "path": {"type": "string", "description": PATH_DESCRIPTION},
             },
         },

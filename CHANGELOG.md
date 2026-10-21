@@ -8,10 +8,22 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- `code-review` skill: a subagent reviews a change before it is done and writes
+  its findings to `.agents/review.md` in the project.
+- `global-rules` references for planning, logging, security, and cleanup.
+- `kind` (`feature`, `fix`, `decision`) on the log tools, and a `kind` filter on
+  `log_search`.
 - Remote Context7 MCP server declaration in `mcp.json` (no credentials needed).
+
+### Changed
+
+- `global-rules` is now described as always-on, so clients that load a skill by
+  its description still pick it up.
 
 ### Fixed
 
+- Dropped `cwd` from the `agent-tools` MCP declaration, so the default work log
+  lands in the project directory instead of the plugin directory.
 - `docs-rules` no longer declares the non-portable `paths:` frontmatter field,
   which conforming clients reject by skipping the skill; activation now rests on
   its description.

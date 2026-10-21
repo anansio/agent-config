@@ -1,6 +1,6 @@
 ---
 name: global-rules
-description: Baseline rules for every task, in every project. Consult the bundled references for accessibility and coding conventions.
+description: Always-on baseline rules for every task in every project. Load this skill at the start of every session and follow it throughout; it is not optional and does not depend on the task. The bundled references hold the planning, logging, security, cleanup, accessibility, and coding rules.
 ---
 
 # Global Rules
@@ -39,9 +39,9 @@ work out why first, then change course.
 
 ## Work log
 
-Keep a short log as you work: what you did and why, including the steps in
-between. Drop or rewrite entries that a later change makes obsolete, and note
-anything still open.
+Keep a short log as you work, and record only features, fixes, and decisions.
+Drop or rewrite entries that a later change makes obsolete. See
+[logging](references/logging.md).
 
 ## Definition of done
 
@@ -50,6 +50,10 @@ with a known security hole.
 
 ## References
 
+- [Planning](references/planning.md): before writing code, for every task.
+- [Logging](references/logging.md): for the work log.
+- [Security](references/security.md): for anything that ships.
+- [Cleanup](references/cleanup.md): after an attempt did not work out.
 - [Accessibility](references/accessibility.md): for user interfaces and
   user-facing text.
 - [Coding rules](references/coding-rules.md): for writing or changing code.
