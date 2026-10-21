@@ -72,6 +72,37 @@ class LogToolTests(unittest.TestCase):
         log.append("fix docs", self.path)
         self.assertEqual(len(json.loads(log.search("parser", self.path))), 1)
 
+    def test_append_records_kind(self) -> None:
+        # Verifies an entry keeps the category it was written with, so a log
+        # can be filtered by kind later.
+        log.append("add parser", self.path, "feature")
+        entry = json.loads(log.search("", self.path))[0]
+        self.assertEqual(entry["kind"], "feature")
+
+    def test_append_without_kind_omits_it(self) -> None:
+        # Verifies the category is optional, so a plain entry stays lean and
+        # does not carry an empty kind field.
+        log.append("no category", self.path)
+        entry = json.loads(log.search("", self.path))[0]
+        self.assertNotIn("kind", entry)
+
+    def test_search_filters_by_kind(self) -> None:
+        # Verifies the kind filter returns only matching entries, which is what
+        # makes the category useful for review.
+        log.append("add parser", self.path, "feature")
+        log.append("fix parser", self.path, "fix")
+        matches = json.loads(log.search("", self.path, "fix"))
+        self.assertEqual(len(matches), 1)
+        self.assertEqual(matches[0]["text"], "fix parser")
+
+    def test_update_sets_kind(self) -> None:
+        # Verifies a course change can recategorize an entry, so a step that
+        # turns out to be a fix is labeled as one.
+        entry_id = log.append("change", self.path)
+        log.update(entry_id, "change", self.path, "decision")
+        entry = json.loads(log.search("", self.path))[0]
+        self.assertEqual(entry["kind"], "decision")
+
     def test_default_path_is_project_relative(self) -> None:
         # Verifies the documented default is used when no path is given, so
         # the log lands in the project rather than next to the plugin.

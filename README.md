@@ -19,7 +19,12 @@ agent-config/
 │   │   ├── SKILL.md
 │   │   └── references/
 │   │       ├── accessibility.md
-│   │       └── coding-rules.md
+│   │       ├── cleanup.md
+│   │       ├── coding-rules.md
+│   │       ├── logging.md
+│   │       ├── planning.md
+│   │       └── security.md
+│   ├── code-review/            # on-demand skill: subagent review gate
 │   ├── docs-rules/             # on-demand skill for documentation
 │   └── git-workflow/           # on-demand skill
 ├── tools/
@@ -36,6 +41,14 @@ agent-config/
 ├── SECURITY.md
 └── LICENSE
 ```
+
+## Skills
+
+`global-rules` is meant to be loaded always: its description says so, so a
+client that only loads a skill by its description still picks it up. It points
+at the bundled references for planning, logging, security, cleanup,
+accessibility, and coding. `code-review`, `docs-rules`, and `git-workflow` load
+on demand from their descriptions.
 
 ## The MCP server
 
@@ -54,10 +67,13 @@ Every tool also takes an optional `path`, so a project can keep its log wherever
 it likes. The file is plain text and can be committed with the project if you
 want the work history to travel with it.
 
-- `log_append` - add a short entry: what was done and why.
-- `log_update` - rewrite an entry by id after a course change.
+- `log_append` - add a short entry: what was done and why, with an optional
+  `kind` (`feature`, `fix`, `decision`).
+- `log_update` - rewrite an entry by id after a course change, and recategorize
+  it with an optional `kind`.
 - `log_delete` - remove an entry that turned out to be a dead end.
-- `log_search` - find entries by substring; returns them with their ids.
+- `log_search` - find entries by substring or `kind`; returns them with their
+  ids.
 
 Add more tools by extending the specs in the relevant group module under
 `tools/agent_mcp/tools/`, then importing that group in `server.py`.

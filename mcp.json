@@ -4,8 +4,7 @@
     "agent-tools": {
       "type": "stdio",
       "command": "python3",
-      "args": ["${PLUGIN_ROOT}/tools/mcp_server.py"],
-      "cwd": "${PLUGIN_ROOT}"
+      "args": ["${PLUGIN_ROOT}/tools/mcp_server.py"]
     },
     "context7": {
       "type": "streamable-http",
