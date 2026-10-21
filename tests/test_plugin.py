@@ -81,6 +81,23 @@ class SkillTests(unittest.TestCase):
             self.assertEqual(fields.get("name"), path.parent.name, f"{path}: name")
             self.assertTrue(fields.get("description"), f"{path}: description")
 
+    def test_skill_frontmatter_uses_only_allowed_fields(self) -> None:
+        # Agent Skills defines a closed set of frontmatter fields. A client that
+        # conforms MUST skip a skill carrying anything else, so a stray
+        # client-specific field silently drops the skill from portable clients.
+        allowed = {
+            "name",
+            "description",
+            "license",
+            "compatibility",
+            "metadata",
+            "allowed-tools",
+        }
+        for path in self._skill_files():
+            fields = parse_frontmatter(path.read_text(encoding="utf-8"))
+            extra = sorted(set(fields) - allowed)
+            self.assertFalse(extra, f"{path}: unsupported frontmatter field(s) {extra}")
+
     def test_skill_relative_links_resolve(self) -> None:
         # Verifies links between skill files point at files that exist, so the
         # documented references do not rot.

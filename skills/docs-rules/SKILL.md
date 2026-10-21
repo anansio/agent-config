@@ -1,11 +1,6 @@
 ---
 name: docs-rules
-description: Conventions for document files such as Markdown, reStructuredText, and AsciiDoc. Loaded automatically when writing or editing documentation.
-paths:
-  - "**/*.md"
-  - "**/*.mdx"
-  - "**/*.rst"
-  - "**/*.adoc"
+description: Conventions for writing and editing documentation and other prose files, such as Markdown, reStructuredText, and AsciiDoc. Use when creating, editing, or reviewing a README, guide, changelog, or any documentation, or when the user asks for docs, documentation, or technical writing help.
 ---
 
 # Documentation Rules

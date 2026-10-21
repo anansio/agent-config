@@ -13,14 +13,14 @@ individual projects stay clean.
 ```
 agent-config/
 ├── plugin.json                 # portable manifest
-├── mcp.json                    # stdio MCP server declaration
+├── mcp.json                    # stdio MCP server + remote Context7 declaration
 ├── skills/
 │   ├── global-rules/           # always-on baseline rules
 │   │   ├── SKILL.md
 │   │   └── references/
 │   │       ├── accessibility.md
 │   │       └── coding-rules.md
-│   ├── docs-rules/             # path-triggered rule for document files
+│   ├── docs-rules/             # on-demand skill for documentation
 │   └── git-workflow/           # on-demand skill
 ├── tools/
 │   ├── mcp_server.py           # stdio entry point (thin launcher)
@@ -62,6 +62,20 @@ want the work history to travel with it.
 Add more tools by extending the specs in the relevant group module under
 `tools/agent_mcp/tools/`, then importing that group in `server.py`.
 
+## MCP servers
+
+`mcp.json` declares two servers:
+
+- `agent-tools` - this repository's stdio server, bundled with the plugin.
+- `context7` - the remote [Context7](https://context7.com) docs server at
+  `https://mcp.context7.com/mcp`. It needs no credentials; an optional API key
+  only raises rate limits and is a client-side concern, so it is not declared
+  here.
+
+Anything requiring a secret (an API key or token) belongs in the client, not in
+the plugin: the Agent Plugins format has no portable credential field, and
+OpenHands' loader reads `mcp.json` literally, without `${VAR}` expansion.
+
 ## Tests
 
 The suite uses only the standard library:
@@ -76,7 +90,7 @@ python -m unittest discover -s tests -v
   wiring (it starts the declared server), and each skill's frontmatter and
   relative links.
 
-CI runs both on every push to `main` and every pull request, across Python
+CI runs the suite on every push to `main` and every pull request, across Python
 3.10 to 3.13.
 
 ## Install
