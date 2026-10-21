@@ -6,6 +6,10 @@
       "command": "python3",
       "args": ["${PLUGIN_ROOT}/tools/mcp_server.py"],
       "cwd": "${PLUGIN_ROOT}"
+    },
+    "context7": {
+      "type": "streamable-http",
+      "url": "https://mcp.context7.com/mcp"
     }
   }
 }
