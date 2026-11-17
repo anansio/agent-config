@@ -8,5 +8,9 @@ venv/
 .env
 .DS_Store
 
+# Node: dependencies come from the client that installs the package, so no lockfile ships
+node_modules/
+package-lock.json
+
 # Work log written by the MCP tools at its default location
 .agents/
