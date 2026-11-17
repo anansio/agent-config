@@ -4,10 +4,17 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.2.0] - 2026-11-17
 
 ### Added
 
+- OpenCode 2.x plugin in `opencode/`: it reads the portable package at load time
+  and registers the always-on rules as a system prompt part, the on-demand
+  skills, and both MCP servers.
+- `package.json` so the repository installs as an OpenCode plugin package
+  straight from git.
+- Node test suite for the plugin loader and the package payload, run in CI
+  beside the Python suite.
 - `code-review` skill: a subagent reviews a change before it is done and writes
   its findings to `.agents/review.md` in the project.
 - `global-rules` references for planning, logging, security, and cleanup.
@@ -39,3 +46,4 @@ All notable changes to this project are documented here. The format follows
 - MIT license.
 
 [0.1.0]: https://github.com/anansio/agent-config/releases/tag/v0.1.0
+[0.2.0]: https://github.com/anansio/agent-config/releases/tag/v0.2.0

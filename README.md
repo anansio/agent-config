@@ -5,6 +5,10 @@ Global agent rules and a small MCP tool server, packaged as a portable
 the Agent Plugins 1.0 format and your agentic engineering setup follows the same
 baseline everywhere.
 
+The same repository is an [OpenCode](https://opencode.ai) 2.3+ plugin package. It
+reads the portable files at load time and registers them with OpenCode, so both
+install paths share one source and no content is duplicated.
+
 The plugin keeps global rules and helper tools in one versioned place, so
 individual projects stay clean.
 
@@ -14,6 +18,10 @@ individual projects stay clean.
 agent-config/
 ├── plugin.json                 # portable manifest
 ├── mcp.json                    # stdio MCP server + remote Context7 declaration
+├── package.json                # OpenCode plugin package, installed from git
+├── opencode/
+│   ├── index.ts                # OpenCode 2.x registration
+│   └── lib.ts                  # reads the portable package at load time
 ├── skills/
 │   ├── global-rules/           # always-on baseline rules
 │   │   ├── SKILL.md
@@ -49,6 +57,12 @@ client that only loads a skill by its description still picks it up. It points
 at the bundled references for planning, logging, security, cleanup,
 accessibility, and coding. `code-review`, `docs-rules`, and `git-workflow` load
 on demand from their descriptions.
+
+The rules stay in the portable skill format so every Agent Plugins client can
+read them. OpenCode does not receive them as a skill: the plugin reads the skill
+body and its references and adds them to the system prompt of every model call.
+That is what "always on" means in OpenCode, and registering the same text as a
+skill as well would pay for it twice.
 
 ## The MCP server
 
@@ -109,7 +123,46 @@ python -m unittest discover -s tests -v
 CI runs the suite on every push to `main` and every pull request, across Python
 3.10 to 3.13.
 
+The OpenCode plugin has its own suite. It needs Node 24 and no dependencies:
+
+```bash
+node --test tests/*.test.ts
+```
+
+- `tests/opencode.test.ts` runs the loader against this repository's files:
+  frontmatter handling, rules assembly and order, the skills it registers, and
+  the `mcp.json` mapping.
+- `tests/package.test.ts` runs `npm pack --dry-run` and fails when the `files`
+  allowlist misses something the plugin reads at runtime.
+
+CI runs both suites on every push to `main` and every pull request.
+
+## OpenCode
+
+`opencode/index.ts` is an OpenCode 2.3+ server plugin. It reads the portable
+package at load time and registers its contents:
+
+- the `global-rules` text as a system prompt part for every model call in the
+  agent loop, built from the skill body plus its references in the order the
+  References section lists them;
+- `code-review`, `docs-rules`, and `git-workflow` as skills, with the body
+  inline and `path` pointing at the bundled `SKILL.md`, so their relative links
+  resolve;
+- the servers from `mcp.json`, with `${PLUGIN_ROOT}` resolved to the installed
+  package. An entry that needs `${PLUGIN_DATA}` is skipped: this plugin has no
+  writable data directory, and one bad entry does not stop its siblings.
+
+`code-review` stays a skill. OpenCode 2.x plugins cannot register agents, so the
+skill keeps its instruction to hand the review to a subagent instead of shipping
+a dedicated agent definition.
+
+The plugin needs OpenCode 2.3 or newer: it is built against `@opencode/plugin`
+2.3, the version that ships with that release. Version 1 uses a different plugin
+API.
+
 ## Install
+
+### OpenHands and other Agent Plugins clients
 
 Register this repository as a plugin source in a client that supports the Agent
 Plugins format. With the default branch:
@@ -120,6 +173,27 @@ github:anansio/agent-config
 
 See the [Agent Plugins documentation](https://agent-plugins.org) for how to add
 a source in your client.
+
+### OpenCode
+
+Install the package from the repository, pinned to a release tag:
+
+```bash
+opencode plugin add github:anansio/agent-config#v0.2.0
+opencode plugin list
+```
+
+The command manages the global OpenCode configuration. `opencode plugin update`
+moves the package to the ref named in the configuration, and
+`opencode plugin remove agent-config@0.2.0` removes it.
+
+For project-local use, point the project configuration at a checkout:
+
+```jsonc
+{
+  "plugins": ["./agent-config"],
+}
+```
 
 ## License
 
