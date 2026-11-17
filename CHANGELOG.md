@@ -4,6 +4,32 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-11-17
+
+### Changed
+
+- The work-log MCP server is plain ESM JavaScript under `tools/agent_mcp/`, with
+  `tools/mcp_server.js` as the stdio entry point, and `mcp.json` starts it with
+  `node`. It still has no dependencies and nothing is compiled at install time.
+- The OpenCode plugin probes `node` before registering the server and accepts an
+  explicit binary through `AGENT_CONFIG_NODE`. Without Node the work-log server
+  is skipped and `context7` still loads.
+- The OpenCode system prompt inlines the rules references and rewrites their
+  cross-links to section names, so the prompt carries no `references/*.md` path
+  that the model cannot open.
+- The logging rule asks for the work-log tools only when the client provides
+  them; without the tools the log is skipped rather than written by hand.
+- CI runs a single Node job with the test suite and the plugin typecheck.
+
+### Removed
+
+- The Python server, the Python test suite, and the Python ignore rules. One
+  language covers the plugin and the server.
+
+### Requirements
+
+- The runtime that starts the MCP server needs Node 20 or newer.
+
 ## [0.2.0] - 2026-11-17
 
 ### Added
@@ -47,3 +73,4 @@ All notable changes to this project are documented here. The format follows
 
 [0.1.0]: https://github.com/anansio/agent-config/releases/tag/v0.1.0
 [0.2.0]: https://github.com/anansio/agent-config/releases/tag/v0.2.0
+[0.3.0]: https://github.com/anansio/agent-config/releases/tag/v0.3.0

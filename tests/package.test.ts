@@ -32,8 +32,10 @@ test("the package payload contains everything the plugin reads at runtime", asyn
     "skills/global-rules/SKILL.md",
     "skills/global-rules/references/planning.md",
     "skills/code-review/SKILL.md",
-    "tools/mcp_server.py",
-    "tools/agent_mcp/server.py",
+    "tools/mcp_server.js",
+    "tools/agent_mcp/server.js",
+    "tools/agent_mcp/log_store.js",
+    "tools/agent_mcp/tools/log.js",
   ]) {
     assert.ok(paths.has(required), `package is missing ${required}`)
   }

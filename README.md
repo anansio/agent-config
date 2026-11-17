@@ -36,12 +36,12 @@ agent-config/
 │   ├── docs-rules/             # on-demand skill for documentation
 │   └── git-workflow/           # on-demand skill
 ├── tools/
-│   ├── mcp_server.py           # stdio entry point (thin launcher)
-│   └── agent_mcp/              # server package
-│       ├── server.py           # JSON-RPC loop and tool registry
-│       ├── log_store.py        # JSON Lines storage and entry ids
+│   ├── mcp_server.js           # stdio entry point (thin launcher)
+│   └── agent_mcp/              # server modules
+│       ├── server.js           # JSON-RPC loop and tool registry
+│       ├── log_store.js        # JSON Lines storage and entry ids
 │       └── tools/              # one module per tool group
-│           └── log.py
+│           └── log.js
 ├── tests/                      # server and plugin validation tests
 ├── .github/workflows/ci.yml    # runs the tests on push and pull request
 ├── README.md
@@ -66,11 +66,17 @@ skill as well would pay for it twice.
 
 ## The MCP server
 
-The server lives in the `tools/agent_mcp/` package: `server.py` holds the
-JSON-RPC loop and the tool registry, `log_store.py` owns storage, and each tool
-group is its own module under `tools/agent_mcp/tools/`. `tools/mcp_server.py`
-is a thin stdio entry point. It uses only the Python standard library, so it
-starts anywhere `python3` exists.
+The server lives in `tools/agent_mcp/`: `server.js` holds the JSON-RPC loop and
+the tool registry, `log_store.js` owns storage, and each tool group is its own
+module under `tools/agent_mcp/tools/`. `tools/mcp_server.js` is a thin stdio
+entry point. It is plain ESM JavaScript with no dependencies, so it starts
+anywhere Node runs and nothing is compiled at install time. The plugin code and
+the server therefore use one language and one runtime.
+
+The server needs Node 20 or newer. What matters is that `node` is on the `PATH`
+of the process that starts the server, not of the shell where you installed
+anything: an MCP client may launch tools inside a container or another sandbox.
+Check that runtime with `node --version` before relying on the work-log tools.
 
 Entries are stored as JSON Lines (one entry per line) with an id and a UTC
 timestamp, so appending stays O(1) and searching streams the file instead of
@@ -90,7 +96,7 @@ want the work history to travel with it.
   ids.
 
 Add more tools by extending the specs in the relevant group module under
-`tools/agent_mcp/tools/`, then importing that group in `server.py`.
+`tools/agent_mcp/tools/`, then importing that group in `server.js`.
 
 ## MCP servers
 
@@ -108,34 +114,27 @@ OpenHands' loader reads `mcp.json` literally, without `${VAR}` expansion.
 
 ## Tests
 
-The suite uses only the standard library:
+The suite needs Node 24. The server tests have no dependencies; the TypeScript
+files are run with Node's built-in type stripping.
 
 ```bash
-python -m unittest discover -s tests -v
+node --test tests/*.test.*
 ```
 
-- `tests/test_mcp_server.py` covers the log tools, including a full stdio
-  round trip with a real tool call.
-- `tests/test_plugin.py` validates the plugin itself: the manifest, the MCP
-  wiring (it starts the declared server), and each skill's frontmatter and
-  relative links.
-
-CI runs the suite on every push to `main` and every pull request, across Python
-3.10 to 3.13.
-
-The OpenCode plugin has its own suite. It needs Node 24 and no dependencies:
-
-```bash
-node --test tests/*.test.ts
-```
-
+- `tests/mcp_server.test.js` covers the log tools, including a full stdio round
+  trip with a real tool call.
+- `tests/plugin.test.js` validates the plugin itself: the manifest, the MCP
+  wiring (it starts the declared server), each skill's frontmatter and relative
+  links, and that no Python file sneaks back in.
 - `tests/opencode.test.ts` runs the loader against this repository's files:
-  frontmatter handling, rules assembly and order, the skills it registers, and
-  the `mcp.json` mapping.
+  frontmatter handling, rules assembly and order, the inline reference
+  rewriting, the Node probe, the skills it registers, and the `mcp.json`
+  mapping.
 - `tests/package.test.ts` runs `npm pack --dry-run` and fails when the `files`
   allowlist misses something the plugin reads at runtime.
 
-CI runs both suites on every push to `main` and every pull request.
+`npm run typecheck` checks the TypeScript plugin. CI runs the tests and the
+typecheck on every push to `main` and every pull request.
 
 ## OpenCode
 
@@ -144,13 +143,22 @@ package at load time and registers its contents:
 
 - the `global-rules` text as a system prompt part for every model call in the
   agent loop, built from the skill body plus its references in the order the
-  References section lists them;
+  References section lists them. The references are inlined, so cross-links
+  become section references (`the logging section below`) instead of
+  `references/*.md` paths the model cannot open, and the reading-order index is
+  dropped;
 - `code-review`, `docs-rules`, and `git-workflow` as skills, with the body
   inline and `path` pointing at the bundled `SKILL.md`, so their relative links
   resolve;
 - the servers from `mcp.json`, with `${PLUGIN_ROOT}` resolved to the installed
   package. An entry that needs `${PLUGIN_DATA}` is skipped: this plugin has no
   writable data directory, and one bad entry does not stop its siblings.
+
+Before registering the stdio server the plugin probes Node with
+`node --version`. When no Node answers, `agent-tools` is skipped and `context7`
+still loads; the rules already say the work-log tools are used only when the
+client provides them, so a missing Node leaves no broken promise. Set
+`AGENT_CONFIG_NODE` to a Node binary outside `PATH` to use that one instead.
 
 `code-review` stays a skill. OpenCode 2.x plugins cannot register agents, so the
 skill keeps its instruction to hand the review to a subagent instead of shipping
@@ -161,6 +169,10 @@ The plugin needs OpenCode 2.3 or newer: it is built against `@opencode/plugin`
 API.
 
 ## Install
+
+Both clients run the work-log server themselves, so the machine or container
+that executes tool calls needs Node 20 or newer. `npm` is not required; only
+`node` matters, and only in the runtime that starts the server.
 
 ### OpenHands and other Agent Plugins clients
 
@@ -179,13 +191,18 @@ a source in your client.
 Install the package from the repository, pinned to a release tag:
 
 ```bash
-opencode plugin add github:anansio/agent-config#v0.2.0
+opencode plugin add github:anansio/agent-config#v0.3.0
 opencode plugin list
 ```
 
 The command manages the global OpenCode configuration. `opencode plugin update`
 moves the package to the ref named in the configuration, and
-`opencode plugin remove agent-config@0.2.0` removes it.
+`opencode plugin remove agent-config@0.3.0` removes it.
+
+The standalone OpenCode installers do not ship Node. Without Node the plugin
+skips `agent-tools` and the four work-log tools are unavailable, while the rules
+and `context7` still load. Install Node, or point `AGENT_CONFIG_NODE` at a
+binary, to get the tools.
 
 For project-local use, point the project configuration at a checkout:
 

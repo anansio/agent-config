@@ -1,6 +1,6 @@
 {
   "name": "agent-config",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Global agent rules, skills, and a work-log MCP server, packaged as an Agent Plugin and an OpenCode plugin.",
   "license": "MIT",
   "type": "module",
@@ -18,7 +18,7 @@
     "mcp.json"
   ],
   "scripts": {
-    "test": "node --test tests/*.test.ts",
+    "test": "node --test tests/*.test.*",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
