@@ -1,6 +1,6 @@
 {
   "name": "agent-config",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Global agent rules, skills, and a work-log MCP server, packaged as an Agent Plugin and an OpenCode plugin.",
   "license": "MIT",
   "type": "module",

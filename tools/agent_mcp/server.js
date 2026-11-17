@@ -4,7 +4,7 @@ import { SPECS } from "./tools/log.js"
 
 export const PROTOCOL_VERSION = "2024-11-05"
 export const SERVER_NAME = "agent-tools"
-export const SERVER_VERSION = "0.3.0"
+export const SERVER_VERSION = "0.3.1"
 
 // Each tool group contributes its specs; the server only wires them into the
 // protocol, so adding a group means importing it here.
