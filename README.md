@@ -82,10 +82,19 @@ Entries are stored as JSON Lines (one entry per line) with an id and a UTC
 timestamp, so appending stays O(1) and searching streams the file instead of
 loading it.
 
-By default the log is written to `.agents/log.jsonl` in the project directory.
-Every tool also takes an optional `path`, so a project can keep its log wherever
-it likes. The file is plain text and can be committed with the project if you
-want the work history to travel with it.
+Every tool takes `project_dir` for the project the agent works in and an
+optional `path` for the log file; the default is `.agents/log.jsonl` there. The
+file is plain text and can be committed with the project if you want the work
+history to travel with it.
+
+`project_dir` exists because a client starts the MCP server in a directory of its
+own choosing, not in the project: OpenHands runs it inside the plugin cache, so a
+relative default would write every project's log into the plugin install. The
+agent therefore names the project per call, and a client that knows the project
+can set `AGENT_CONFIG_PROJECT_DIR` once for the whole server instead. When
+neither is given and the working directory is the plugin install or your home
+directory, the tools refuse the call and ask for `project_dir` rather than
+writing somewhere nobody looks.
 
 - `log_append` - add a short entry: what was done and why, with an optional
   `kind` (`feature`, `fix`, `decision`).

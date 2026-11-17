@@ -7,8 +7,11 @@ import { join } from "node:path"
 import { test } from "node:test"
 import { fileURLToPath } from "node:url"
 import {
-  DEFAULT_LOG_PATH,
+  DEFAULT_LOG_FILE,
+  PLUGIN_ROOT,
+  PROJECT_DIR_ENV,
   resolveLogPath,
+  resolveProjectDir,
 } from "../tools/agent_mcp/log_store.js"
 import * as log from "../tools/agent_mcp/tools/log.js"
 import * as server from "../tools/agent_mcp/server.js"
@@ -116,10 +119,51 @@ test("update sets the kind", async (t) => {
   assert.equal(JSON.parse(log.search({ query: "", path }))[0].kind, "decision")
 })
 
-test("the default path is project relative", () => {
-  // The documented default keeps the log in the project, not next to the plugin.
-  assert.equal(resolveLogPath(), DEFAULT_LOG_PATH)
-  assert.equal(DEFAULT_LOG_PATH, ".agents/log.jsonl")
+test("the default path lands in the given project directory", async (t) => {
+  // The log belongs to the project the agent works in, wherever the server was started.
+  const { dir } = await withLog(t)
+  assert.equal(resolveLogPath({ projectDir: dir }), join(dir, DEFAULT_LOG_FILE))
+  assert.equal(DEFAULT_LOG_FILE, ".agents/log.jsonl")
+})
+
+test("a relative path resolves against the project directory", async (t) => {
+  // A project may name its log, but it stays inside the project unless given absolutely.
+  const { dir } = await withLog(t)
+  assert.equal(resolveLogPath({ path: "notes/work.jsonl", projectDir: dir }), join(dir, "notes", "work.jsonl"))
+})
+
+test("an absolute path needs no project directory", () => {
+  // An explicit file is unambiguous, so it must not depend on where the server runs.
+  assert.equal(resolveLogPath({ path: "/var/log/work.jsonl" }), "/var/log/work.jsonl")
+})
+
+test("the environment names the project when the client can set it", async (t) => {
+  // A client that knows the project can set it once instead of per call.
+  const { dir } = await withLog(t)
+  const previous = process.env[PROJECT_DIR_ENV]
+  process.env[PROJECT_DIR_ENV] = dir
+  t.after(() => {
+    if (previous === undefined) delete process.env[PROJECT_DIR_ENV]
+    else process.env[PROJECT_DIR_ENV] = previous
+  })
+
+  assert.equal(resolveLogPath(), join(dir, DEFAULT_LOG_FILE))
+})
+
+test("a plugin install as working directory fails loudly", () => {
+  // This is the bug the project directory exists for: a client that starts the server inside
+  // its plugin cache must get an actionable error, not a log in the plugin install.
+  const previous = process.env[PROJECT_DIR_ENV]
+  delete process.env[PROJECT_DIR_ENV]
+  const cwd = process.cwd()
+  process.chdir(PLUGIN_ROOT)
+  try {
+    assert.throws(() => resolveProjectDir(), /plugin install.*project_dir/s)
+    assert.throws(() => resolveLogPath(), /project_dir/)
+  } finally {
+    process.chdir(cwd)
+    if (previous !== undefined) process.env[PROJECT_DIR_ENV] = previous
+  }
 })
 
 test("an explicit path wins over the default", async (t) => {
@@ -205,4 +249,42 @@ test("stdio end to end", async (t) => {
   const entries = JSON.parse(lines[3].result.content[0].text)
   assert.equal(entries[0].id, entryId)
   assert.equal(entries[0].text, "end to end entry")
+})
+
+test("stdio writes into project_dir when the server starts in the plugin", async (t) => {
+  // The case that broke in practice: OpenHands starts the server in the plugin cache, so the
+  // agent has to name the project for the entry to reach it.
+  const { dir } = await withLog(t)
+  const requests = [
+    { jsonrpc: "2.0", id: 1, method: "initialize", params: {} },
+    {
+      jsonrpc: "2.0",
+      id: 2,
+      method: "tools/call",
+      params: { name: "log_append", arguments: { text: "project entry", project_dir: dir } },
+    },
+    {
+      jsonrpc: "2.0",
+      id: 3,
+      method: "tools/call",
+      params: { name: "log_append", arguments: { text: "lost entry" } },
+    },
+  ]
+    .map((message) => JSON.stringify(message))
+    .join("\n")
+
+  const stdout = execFileSync(process.execPath, [SERVER], {
+    input: requests + "\n",
+    encoding: "utf8",
+    timeout: 10000,
+    cwd: PLUGIN_ROOT,
+  })
+  const lines = stdout.trim().split("\n").map((line) => JSON.parse(line))
+
+  assert.equal(lines[1].result.isError, undefined)
+  const entries = JSON.parse(log.search({ query: "", project_dir: dir }))
+  assert.equal(entries.length, 1)
+  assert.equal(entries[0].text, "project entry")
+  assert.equal(lines[2].result.isError, true)
+  assert.match(lines[2].result.content[0].text, /project_dir/)
 })

@@ -1,5 +1,5 @@
 /**
- * Work-log storage: JSON Lines file access and entry identifiers.
+ * Work-log storage: JSON Lines file access, entry identifiers, and log locations.
  *
  * Entries are stored one per line so that appending stays O(1) and reading
  * streams the file instead of loading it, which keeps large logs cheap.
@@ -7,16 +7,71 @@
 import { randomBytes } from "node:crypto"
 import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs"
 import { homedir } from "node:os"
-import { dirname, join } from "node:path"
+import { dirname, isAbsolute, join, resolve, sep } from "node:path"
+import { fileURLToPath } from "node:url"
 
-// Default location, relative to the project the agent works in. Tools accept an
-// explicit path to place the log anywhere else.
-export const DEFAULT_LOG_PATH = ".agents/log.jsonl"
+// Default location, relative to the project the agent works in. Tools accept a
+// project directory and an explicit path to place the log anywhere else.
+export const DEFAULT_LOG_FILE = ".agents/log.jsonl"
 
-/** Return the log file to use: the given path, or the project default. */
-export function resolveLogPath(path) {
-  if (!path) return DEFAULT_LOG_PATH
-  return path.startsWith("~") ? join(homedir(), path.slice(1)) : path
+// Where this repository is installed. A client that starts the server without a
+// project working directory (OpenHands uses the plugin cache) must not log here.
+export const PLUGIN_ROOT = resolve(fileURLToPath(new URL("../../", import.meta.url)))
+
+// A client cannot tell the server which project it serves, so the agent passes
+// `project_dir` per call. This variable covers a client that sets it once for the
+// whole server process instead.
+export const PROJECT_DIR_ENV = "AGENT_CONFIG_PROJECT_DIR"
+
+function expandHome(value) {
+  const trimmed = value.trim()
+  return trimmed.startsWith("~") ? join(homedir(), trimmed.slice(1)) : trimmed
+}
+
+function isInside(child, parent) {
+  return child === parent || child.startsWith(parent.endsWith(sep) ? parent : parent + sep)
+}
+
+// A base directory that is clearly not a project: writing there mixes every
+// project's log into one file in the wrong place, and nothing reports it.
+function wrongBase(dir) {
+  if (isInside(dir, PLUGIN_ROOT)) return "the plugin install"
+  if (dir === resolve(homedir())) return "your home directory"
+  return undefined
+}
+
+/**
+ * Return the directory the log belongs to: the `project_dir` argument, the
+ * `AGENT_CONFIG_PROJECT_DIR` variable, or the server's working directory.
+ *
+ * A relative default silently depends on how the client started the server, so a
+ * working directory that cannot be a project fails loudly instead.
+ */
+export function resolveProjectDir(projectDir) {
+  const given = expandHome(projectDir ?? "") || expandHome(process.env[PROJECT_DIR_ENV] ?? "")
+  if (given) return resolve(given)
+
+  const cwd = process.cwd()
+  const wrong = wrongBase(cwd)
+  if (wrong) {
+    throw new Error(
+      `No project directory: this server runs in ${wrong} (${cwd}), not in a project. ` +
+        "Pass project_dir with the directory you are working in.",
+    )
+  }
+  return cwd
+}
+
+/**
+ * Return the absolute log file to use. An absolute `path` is taken as is, a
+ * relative one resolves against the project directory, and the default is
+ * `.agents/log.jsonl` there.
+ */
+export function resolveLogPath({ path, projectDir } = {}) {
+  const target = expandHome(path ?? "")
+  if (target && isAbsolute(target)) return target
+  if (target) return resolve(resolveProjectDir(projectDir), target)
+  return join(resolveProjectDir(projectDir), DEFAULT_LOG_FILE)
 }
 
 /** Return a short random id used to reference an entry. */
