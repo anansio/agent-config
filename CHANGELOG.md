@@ -6,6 +6,11 @@ All notable changes to this project are documented here. The format follows
 
 ## [0.3.0] - 2026-11-17
 
+### Added
+
+- Every work-log tool takes `project_dir`, the project root the entry belongs to,
+  and `AGENT_CONFIG_PROJECT_DIR` sets it once for a whole server process.
+
 ### Changed
 
 - The work-log MCP server is plain ESM JavaScript under `tools/agent_mcp/`, with
@@ -18,8 +23,20 @@ All notable changes to this project are documented here. The format follows
   cross-links to section names, so the prompt carries no `references/*.md` path
   that the model cannot open.
 - The logging rule asks for the work-log tools only when the client provides
-  them; without the tools the log is skipped rather than written by hand.
+  them; without the tools the log is skipped rather than written by hand. It also
+  asks for `project_dir` on every call, including `log_update`, `log_delete`, and
+  `log_search`.
 - CI runs a single Node job with the test suite and the plugin typecheck.
+
+### Fixed
+
+- The default log location no longer depends on the directory a client starts the
+  MCP server in. OpenHands starts it inside the plugin cache, so
+  `.agents/log.jsonl` was written into the plugin install instead of the project.
+  A relative `path` now resolves against `project_dir` as well.
+- A call without a project directory whose working directory is the plugin
+  install or the home directory fails with an actionable error instead of writing
+  a log where no project will find it.
 
 ### Removed
 
