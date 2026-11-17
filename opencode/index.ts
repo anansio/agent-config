@@ -12,9 +12,9 @@ export default Plugin.define({
     // Read the portable package before registering: transform callbacks are synchronous.
     const rules = await loadRules(join(root, "skills", RULES_SKILL))
     const skills = await loadSkills(join(root, "skills"), [RULES_SKILL])
-    const servers = await loadMcpServers(root, {
-      python: process.platform === "win32" ? "python" : undefined,
-    })
+    // A missing Node skips the work-log server on its own; the rules already say the tools are
+    // optional, so there is nothing to report here.
+    const { servers } = await loadMcpServers(root)
 
     await ctx.session.hook("context", (event) => {
       event.system.push({ type: "text", text: rules })

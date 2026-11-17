@@ -3,8 +3,8 @@
   "mcpServers": {
     "agent-tools": {
       "type": "stdio",
-      "command": "python3",
-      "args": ["${PLUGIN_ROOT}/tools/mcp_server.py"]
+      "command": "node",
+      "args": ["${PLUGIN_ROOT}/tools/mcp_server.js"]
     },
     "context7": {
       "type": "streamable-http",

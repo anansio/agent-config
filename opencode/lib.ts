@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process"
 import { readdir, readFile } from "node:fs/promises"
 import { join, resolve } from "node:path"
 
@@ -29,6 +30,16 @@ export interface McpServerEntry {
   config: McpServerConfig
 }
 
+export interface McpLoadResult {
+  servers: McpServerEntry[]
+  skipped: string[]
+}
+
+export interface McpLoadOptions {
+  node?: string
+  probe?: (command: string) => boolean
+}
+
 export interface Frontmatter {
   fields: Record<string, string>
   body: string
@@ -53,6 +64,10 @@ export function splitFrontmatter(text: string): Frontmatter {
 /**
  * Assemble the always-on rules from the `global-rules` skill: the SKILL.md body followed by
  * every reference it links, in link order, then any unlinked reference by name.
+ *
+ * The references are inlined, so a `references/*.md` link would point at a path the model
+ * cannot open. Cross-references become section references instead, and the reading-order index
+ * is dropped because the sections follow the body directly.
  */
 export async function loadRules(skillDir: string): Promise<string> {
   const { body } = splitFrontmatter(await readFile(join(skillDir, "SKILL.md"), "utf8"))
@@ -81,7 +96,12 @@ export async function loadRules(skillDir: string): Promise<string> {
       (await readFile(join(referencesDir, name), "utf8")).replace(/\r\n/g, "\n").trim(),
     ),
   )
-  return [body.trim(), ...sections].join("\n\n")
+  const prose = body
+    .replace(/\[([^\]]+)\]\(references\/[^)]*\)/g, (_, label: string) => `the ${label} section below`)
+    .replace(/\n## References\n[\s\S]*$/, "")
+    .trim()
+
+  return [prose, ...sections].join("\n\n")
 }
 
 /** Load on-demand skills from the portable `skills/` directory, skipping the rules skill. */
@@ -119,34 +139,59 @@ export async function loadSkills(
  *
  * `${PLUGIN_ROOT}` resolves against the installed package. An entry that needs `${PLUGIN_DATA}`
  * is skipped: this plugin has no writable per-plugin data directory, and a broken entry must not
- * take its siblings down.
+ * take its siblings down. A stdio entry that needs Node is skipped when no Node answers, and
+ * reported in `skipped` so a caller can tell the difference between "not declared" and "not
+ * runnable here".
  */
 export async function loadMcpServers(
   pluginRoot: string,
-  options: { python?: string } = {},
-): Promise<McpServerEntry[]> {
+  options: McpLoadOptions = {},
+): Promise<McpLoadResult> {
   const document = JSON.parse(await readFile(join(pluginRoot, "mcp.json"), "utf8")) as {
     mcpServers?: Record<string, Record<string, unknown>>
   }
 
+  const node = resolveNodeCommand(options)
   const entries = Object.entries(document.mcpServers ?? {}).sort(([a], [b]) => a.localeCompare(b))
   const servers: McpServerEntry[] = []
+  const skipped: string[] = []
   for (const [name, entry] of entries) {
-    const config = toOpenCodeServer(entry, pluginRoot, options.python)
+    const config = toOpenCodeServer(entry, pluginRoot, node)
     if (config) servers.push({ name, config })
+    else skipped.push(name)
   }
-  return servers
+  return { servers, skipped }
+}
+
+/**
+ * Resolve the Node command for stdio servers. `AGENT_CONFIG_NODE` names an explicit binary for
+ * runtimes where `node` is not on PATH; the command only counts if it answers `--version`.
+ */
+export function resolveNodeCommand(options: McpLoadOptions = {}): string | undefined {
+  const configured = (options.node ?? process.env.AGENT_CONFIG_NODE ?? "").trim()
+  const command = configured || "node"
+  const probe = options.probe ?? probeNode
+  return probe(command) ? command : undefined
+}
+
+function probeNode(command: string): boolean {
+  try {
+    return spawnSync(command, ["--version"], { stdio: "ignore", timeout: 5000 }).status === 0
+  } catch {
+    return false
+  }
 }
 
 function toOpenCodeServer(
   entry: Record<string, unknown>,
   pluginRoot: string,
-  python: string | undefined,
+  node: string | undefined,
 ): McpServerConfig | undefined {
   const type = entry.type
 
   if (type === "stdio") {
     if (typeof entry.command !== "string") return undefined
+    if (entry.command === "node" && !node) return undefined
 
     const args = asStrings(entry.args).map((arg) => expand(arg, pluginRoot))
     const cwd = typeof entry.cwd === "string" ? expandPath(entry.cwd, pluginRoot) : undefined
@@ -155,7 +200,7 @@ function toOpenCodeServer(
       return undefined
     }
 
-    const command = entry.command === "python3" && python ? python : entry.command
+    const command = entry.command === "node" && node ? node : entry.command
     return {
       type: "local",
       command: [resolveCommand(command, pluginRoot), ...args],

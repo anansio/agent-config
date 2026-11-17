@@ -8,6 +8,7 @@ import {
   loadMcpServers,
   loadRules,
   loadSkills,
+  resolveNodeCommand,
   splitFrontmatter,
   RULES_SKILL,
   type McpServerConfig,
@@ -57,6 +58,10 @@ test("loadRules assembles body and references in link order", async () => {
   assert.ok(!rules.startsWith("---"), "rules must not start with frontmatter")
   assert.match(rules, /Write in English/)
 
+  // The references are inlined, so a file link would point at a path the model cannot open.
+  assert.ok(!rules.includes("references/"), "rules must not carry reference file paths")
+  assert.match(rules, /the logging section below/)
+
   const headings = ["# Planning", "# Logging", "# Security", "# Cleanup", "# Accessibility", "# Coding Rules"]
   const positions = headings.map((heading) => rules.indexOf(heading))
   for (const [index, position] of positions.entries()) {
@@ -85,26 +90,76 @@ test("loadSkills returns the on-demand skills without the rules skill", async ()
 // The portable mcp.json is the only source for servers, so both transports have to map without
 // leaving an unexpanded placeholder behind; `${PLUGIN_ROOT}` becomes the installed package path.
 test("loadMcpServers maps both transports from mcp.json", async () => {
-  const servers = await loadMcpServers(ROOT)
+  const { servers, skipped } = await loadMcpServers(ROOT, { probe: () => true })
   const byName = new Map(servers.map((server) => [server.name, server.config]))
 
   const tools = local(byName.get("agent-tools")!)
-  assert.equal(tools.command[0], "python3")
-  assert.equal(tools.command[1], join(ROOT, "tools", "mcp_server.py"))
+  assert.equal(tools.command[0], "node")
+  assert.equal(tools.command[1], join(ROOT, "tools", "mcp_server.js"))
   assert.equal(tools.cwd, undefined)
 
   const context7 = remote(byName.get("context7")!)
   assert.equal(context7.url, "https://mcp.context7.com/mcp")
 
+  assert.deepEqual(skipped, [])
   assert.ok(!JSON.stringify(servers).includes("${"), "placeholders must be expanded")
 })
 
-// Windows ships `python` instead of `python3`, and a hard-coded interpreter name would make the
-// work-log server fail to start there.
-test("loadMcpServers replaces the python3 command when asked", async () => {
-  const servers = await loadMcpServers(ROOT, { python: "python" })
+// A node binary outside PATH is the escape hatch for restricted runtimes; the override names it
+// and the loader probes that command instead of the default.
+test("loadMcpServers replaces the node command when asked", async () => {
+  const seen: string[] = []
+  const { servers, skipped } = await loadMcpServers(ROOT, {
+    node: "/opt/node/bin/node",
+    probe: (command) => {
+      seen.push(command)
+      return true
+    },
+  })
+
   const tools = local(servers.find((server) => server.name === "agent-tools")!.config)
-  assert.equal(tools.command[0], "python")
+  assert.equal(tools.command[0], "/opt/node/bin/node")
+  assert.deepEqual(seen, ["/opt/node/bin/node"])
+  assert.deepEqual(skipped, [])
+})
+
+// Without Node the work-log server cannot start. It is skipped as a whole, and the remote server
+// still loads, so a missing interpreter never takes the session down.
+test("loadMcpServers skips the work-log server when node is missing", async () => {
+  const { servers, skipped } = await loadMcpServers(ROOT, { probe: () => false })
+
+  assert.deepEqual(
+    servers.map((server) => server.name),
+    ["context7"],
+  )
+  assert.deepEqual(skipped, ["agent-tools"])
+})
+
+// The environment variable is the documented override, so it must win over the default without
+// an explicit option.
+test("resolveNodeCommand reads AGENT_CONFIG_NODE", () => {
+  const previous = process.env.AGENT_CONFIG_NODE
+  try {
+    process.env.AGENT_CONFIG_NODE = "/custom/node"
+    let probed = ""
+    const resolved = resolveNodeCommand({
+      probe: (command) => {
+        probed = command
+        return true
+      },
+    })
+    assert.equal(resolved, "/custom/node")
+    assert.equal(probed, "/custom/node")
+  } finally {
+    if (previous === undefined) delete process.env.AGENT_CONFIG_NODE
+    else process.env.AGENT_CONFIG_NODE = previous
+  }
+})
+
+// A probe that fails means no Node at all; the loader must report that instead of handing the
+// client a command that exits immediately.
+test("resolveNodeCommand returns undefined when the probe fails", () => {
+  assert.equal(resolveNodeCommand({ probe: () => false }), undefined)
 })
 
 // One unusable entry must not take its siblings down: an entry that needs a writable plugin data
@@ -117,16 +172,17 @@ test("loadMcpServers skips an entry that needs PLUGIN_DATA", async () => {
       JSON.stringify({
         mcpServers: {
           keep: { type: "streamable-http", url: "https://example.com/mcp" },
-          drop: { type: "stdio", command: "python3", args: ["${PLUGIN_DATA}/state.json"] },
+          drop: { type: "stdio", command: "node", args: ["${PLUGIN_DATA}/state.json"] },
         },
       }),
     )
 
-    const servers = await loadMcpServers(dir)
+    const { servers, skipped } = await loadMcpServers(dir, { probe: () => true })
     assert.deepEqual(
       servers.map((server) => server.name),
       ["keep"],
     )
+    assert.deepEqual(skipped, ["drop"])
   } finally {
     await rm(dir, { recursive: true, force: true })
   }
