@@ -200,13 +200,13 @@ a source in your client.
 Install the package from the repository, pinned to a release tag:
 
 ```bash
-opencode plugin add github:anansio/agent-config#v0.3.0
+opencode plugin add github:anansio/agent-config#v0.3.1
 opencode plugin list
 ```
 
 The command manages the global OpenCode configuration. `opencode plugin update`
 moves the package to the ref named in the configuration, and
-`opencode plugin remove agent-config@0.3.0` removes it.
+`opencode plugin remove agent-config@0.3.1` removes it.
 
 The standalone OpenCode installers do not ship Node. Without Node the plugin
 skips `agent-tools` and the four work-log tools are unavailable, while the rules

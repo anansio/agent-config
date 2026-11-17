@@ -4,7 +4,11 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.3.0] - 2026-11-17
+## [0.3.1] - 2026-11-17
+
+Corrects the withdrawn 0.3.0. GitHub had locked the published `v0.3.0` tag to
+its commit, so the work-log fix could not ship under that version; the release
+tag cannot be reused, and 0.3.1 carries the same content with the fix.
 
 ### Added
 
